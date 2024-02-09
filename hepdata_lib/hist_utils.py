@@ -15,37 +15,27 @@ def read_hist(histo: hist.Hist, flow: bool = False) -> Dict[str, numpy.ndarray]:
     can be used for hepdata_lib Variable and Uncertainty declaration.
 
     For all axes define in the histogram, a `hepdata_lib.Variable` with
-    `is_independent=True` should be declared. The `values` of this variable will
-    be stored in the return dictionary following the axes names.
+    `is_independent=True` should be declared. The `values` of this variable
+    will be stored in the return dictionary following the axes names.
 
-    Overflow and underflow bin will be handled using a single flag for all axes,
-    so be sure to declare/modify histogram axes properties according to your
-    needs.
+    Overflow and underflow bin will be handled using a single flag for all
+    axes, so be sure to declare/modify histogram axes properties according to
+    your needs.
 
     The storage content will be returned as is, so additional uncertainty
     processing will need to be handled by the user using the return values.
     """
-    axes_entries = [_get_histaxis_array(ax, flow=flow) for ax in histo.axes]
+    axes_entries = [_get_histaxis_array(ax, flow=flow) for ax in reversed(histo.axes)]
     axes_entries = numpy.meshgrid(*axes_entries)
 
-    ## Getting axes return values
+    # Getting axes return values
     readout = {
-        ax.name: axes_entries[idx].flatten() for idx, ax in enumerate(histo.axes)
+        ax.name: axes_entries[idx].flatten()
+        for idx, ax in enumerate(reversed(histo.axes))
     }
 
-    ## Getting the histogram return values
+    # Getting the histogram return values
     view = histo.view(flow=flow)
-
-    _storage_keys = {
-        hist.storage.Weight: ["value", "variance"],
-        hist.storage.Mean: ["value", "count", "_sum_of_deltas_squared"],
-        hist.storage.WeightedMean: [
-            "value",
-            "sum_of_weights",
-            "sum_of_weights_squared",
-            "_sum_of_weighted_deltas_squared",
-        ],
-    }
 
     if view.dtype.names is None:  # Single value storages
         readout["hist_value"] = view.flatten()
